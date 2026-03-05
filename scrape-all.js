@@ -75,7 +75,8 @@ async function scrapeAllReviews() {
         if (await newestOpt.count() > 0) {
           await newestOpt.click();
           console.log('   ✅ Sorted by Newest');
-          await page.waitForTimeout(2000);
+          // Chờ feed re-render sau khi sort
+          await page.waitForTimeout(4000);
         }
       }
     } catch (_) {
@@ -172,7 +173,11 @@ async function scrapeAllReviews() {
         const avatar = avatarEl ? avatarEl.src : '';
 
         const isVerified = !!el.querySelector(".RfnDt, .QV3IV");
-        results.push({ reviewId, author, rating, text, timeText, avatar, isVerified, scrapedAt: new Date().toISOString() });
+
+        // Link dẫn tới review trên Google Maps
+        const authorLinkEl = el.querySelector('button.WEBjve, button.al6Kxe, button[data-href*="contrib"]');
+        const reviewUrl = authorLinkEl?.href || authorLinkEl?.getAttribute('data-href') || '';
+        results.push({ reviewId, author, rating, text, timeText, avatar, isVerified, reviewUrl, scrapedAt: new Date().toISOString() });
       });
       return results;
     });

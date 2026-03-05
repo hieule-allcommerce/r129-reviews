@@ -81,6 +81,24 @@ async function test() {
 
     await page.waitForTimeout(2500);
 
+    // 3b. Sort theo Newest
+    console.log('\n3️⃣b  Sort theo mới nhất...');
+    try {
+      const sortBtn = page.locator('button[aria-label*="Sort"]').first();
+      if (await sortBtn.count() > 0) {
+        await sortBtn.click();
+        await page.waitForTimeout(800);
+        const newestOpt = page.locator('[role="menuitemradio"]').filter({ hasText: /newest/i }).first();
+        if (await newestOpt.count() > 0) {
+          await newestOpt.click();
+          console.log('   ✅ Sorted by Newest');
+          await page.waitForTimeout(4000); // Chờ feed re-render
+        }
+      }
+    } catch (_) {
+      console.log('   ⚠️  Không sort được');
+    }
+
     // 4. Tìm feed và scroll
     console.log('\n4️⃣  Scroll để load reviews...');
     let feed = null;
@@ -103,8 +121,24 @@ async function test() {
       console.log('   Scroll ' + (i+1) + ': ' + count + ' reviews loaded');
     }
 
+    // 4b. Dump HTML của review item đầu tiên để tìm link selector
+    console.log('\n4️⃣b  Dump HTML review item đầu tiên...');
+    const firstItemHTML = await page.evaluate(() => {
+      const el = document.querySelector('div[data-review-id]');
+      if (!el) return 'NOT FOUND';
+      // Chỉ lấy các thẻ a và button có href/data
+      const links = Array.from(el.querySelectorAll('a, button[data-href]')).map(a => ({
+        tag: a.tagName,
+        href: a.href || a.getAttribute('data-href') || '',
+        class: a.className?.slice(0, 50),
+        text: a.innerText?.trim().slice(0, 30),
+      }));
+      return JSON.stringify(links, null, 2);
+    });
+    console.log('   Links trong review item:');
+    console.log(firstItemHTML);
+
     // 5. Extract
-    console.log('\n5️⃣  Extract...');
     const reviews = await page.evaluate(() => {
       const items = document.querySelectorAll('div[data-review-id]');
       return Array.from(items).map((el) => {
@@ -115,7 +149,12 @@ async function test() {
         const rating = ratingMatch ? parseInt(ratingMatch[1]) : null;
         const text = el.querySelector('.wiI7pd')?.innerText?.trim() || el.querySelector('.MyEned span')?.innerText?.trim() || '';
         const timeText = el.querySelector('.rsqaWe')?.innerText?.trim() || '';
-        return { reviewId, author, rating, text, timeText };
+        const avatarEl = el.querySelector('img.NBa7we, button img');
+        const avatar = avatarEl ? avatarEl.src : '';
+        const isVerified = !!el.querySelector('.RfnDt, .QV3IV, span[aria-label*="Local Guide"]');
+        const authorLinkEl = el.querySelector('button.WEBjve, button.al6Kxe, button[data-href*="contrib"]');
+        const reviewUrl = authorLinkEl?.href || authorLinkEl?.getAttribute('data-href') || '';
+        return { reviewId, author, rating, text, timeText, avatar, isVerified, reviewUrl };
       });
     });
 
@@ -131,8 +170,12 @@ async function test() {
     } else {
       console.log('\n✅ ' + reviews.length + ' reviews:\n');
       reviews.forEach((r, i) => {
-        console.log('[' + (i+1) + '] ⭐' + (r.rating ?? '?') + ' | ' + r.author + ' (' + r.timeText + ')');
-        if (r.text) console.log('     "' + r.text.slice(0, 100) + '"\n');
+        console.log('[' + (i+1) + '] ⭐' + (r.rating ?? '?') + ' | ' + r.author + ' (' + r.timeText + ') | verified=' + r.isVerified);
+        if (r.text)      console.log('     text:      "' + r.text.slice(0, 80) + '"');
+        if (r.avatar)    console.log('     avatar:    ' + r.avatar.slice(0, 70) + '...');
+        if (r.reviewUrl) console.log('     reviewUrl: ' + r.reviewUrl.slice(0, 70) + '...');
+        else             console.log('     reviewUrl: ❌ empty');
+        console.log('');
       });
       console.log('🎉 Test thành công! Giờ chạy scrape-all.js để lấy toàn bộ.');
       await page.waitForTimeout(3000);

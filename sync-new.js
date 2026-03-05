@@ -58,6 +58,20 @@ async function syncNewReviews() {
     }
     await page.waitForTimeout(2500);
 
+    // Sort theo Newest
+    try {
+      const sortBtn = page.locator('button[aria-label*="Sort"]').first();
+      if (await sortBtn.count() > 0) {
+        await sortBtn.click();
+        await page.waitForTimeout(800);
+        const newestOpt = page.locator('[role="menuitemradio"]').filter({ hasText: /newest/i }).first();
+        if (await newestOpt.count() > 0) {
+          await newestOpt.click();
+          await page.waitForTimeout(4000);
+        }
+      }
+    } catch (_) {}
+
     // Scroll vài lần để load reviews mới nhất
     const feed = page.locator('div[aria-label*="review" i]').first();
     for (let i = 0; i < SCROLL_ROUNDS; i++) {
@@ -82,7 +96,9 @@ async function syncNewReviews() {
         const avatarEl = el.querySelector('img.NBa7we, button img');
         const avatar = avatarEl ? avatarEl.src : '';
         const isVerified = !!el.querySelector('.RfnDt, .QV3IV, span[aria-label*="Local Guide"]');
-        results.push({ reviewId, author, rating, text, timeText, avatar, isVerified, scrapedAt: new Date().toISOString() });
+        const authorLinkEl = el.querySelector('button.WEBjve, button.al6Kxe, button[data-href*="contrib"]');
+        const reviewUrl = authorLinkEl?.href || authorLinkEl?.getAttribute('data-href') || '';
+        results.push({ reviewId, author, rating, text, timeText, avatar, isVerified, reviewUrl, scrapedAt: new Date().toISOString() });
       });
       return results;
     });
