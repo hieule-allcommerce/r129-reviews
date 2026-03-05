@@ -92,7 +92,8 @@ async function syncNewReviews() {
         const ratingMatch = ratingEl?.getAttribute('aria-label')?.match(/(\d)/);
         const rating = ratingMatch ? parseInt(ratingMatch[1]) : null;
         const text = el.querySelector('.wiI7pd')?.innerText?.trim() || el.querySelector('.MyEned span')?.innerText?.trim() || '';
-        const timeText = el.querySelector('.rsqaWe')?.innerText?.trim() || '';
+        const rawTime = el.querySelector('.rsqaWe')?.innerText?.trim() || '';
+        const timeText = rawTime.replace(/^Edited\s+/i, '').trim();
         const avatarEl = el.querySelector('img.NBa7we, button img');
         const avatar = avatarEl ? avatarEl.src : '';
         const isVerified = !!el.querySelector('.RfnDt, .QV3IV, span[aria-label*="Local Guide"]');
