@@ -1,0 +1,12 @@
+{
+  "name": "google-reviews-scraper",
+  "version": "1.0.0",
+  "description": "Scrape Google Maps reviews bằng Playwright",
+  "scripts": {
+    "scrape-all": "node scrape-all.js",
+    "sync": "node sync-new.js"
+  },
+  "dependencies": {
+    "playwright": "^1.41.0"
+  }
+}
