@@ -3,7 +3,7 @@ name: Sync Google Reviews
 on:
   schedule:
     - cron: '0 */4 * * *'  # Chạy mỗi 4 tiếng
-  workflow_dispatch:        # Cho phép chạy thủ công trên GitHub UI
+  workflow_dispatch:        # Chạy thủ công trên GitHub UI
 
 jobs:
   sync:
@@ -21,8 +21,10 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Install Playwright browser
-        run: npx playwright install chromium --with-deps
+      - name: Install Playwright + Chromium deps
+        run: |
+          sudo npx playwright install-deps chromium
+          npx playwright install chromium
 
       - name: Run sync
         run: node sync-new.js
